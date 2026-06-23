@@ -81,7 +81,8 @@ $('#btnAnalyze').addEventListener('click', async () => {
 
     // Show progress
     $('#btnAnalyze').disabled = true;
-    $('#btnExport').disabled = true;
+    $('#btnExportPDF').disabled = true;
+    $('#btnExportTXT').disabled = true;
     $('#btnAppreciation').disabled = true;
     $('#progressBar').style.display = 'flex';
     $('#resultSection').style.display = 'none';
@@ -130,7 +131,8 @@ $('#btnAnalyze').addEventListener('click', async () => {
         // Show sections
         $('#resultSection').style.display = 'block';
         $('#comparisonSection').style.display = 'block';
-        $('#btnExport').disabled = false;
+        $('#btnExportPDF').disabled = false;
+        $('#btnExportTXT').disabled = false;
         $('#btnAppreciation').disabled = false;
 
         showToast('分析完成！');
@@ -322,12 +324,48 @@ function renderAppreciation(text) {
 }
 
 // ---------- Export Report ----------
-$('#btnExport').addEventListener('click', async () => {
+// ---------- Export PDF ----------
+$('#btnExportPDF').addEventListener('click', async () => {
     if (!state.resultA || !state.resultB) {
         showToast('请先完成文本分析', 'warning');
         return;
     }
+    try {
+        const res = await fetch('/api/export/pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                result_a: state.resultA,
+                result_b: state.resultB,
+                comparison: state.comparison,
+                appreciation_text: state.appreciationText,
+            }),
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || '导出失败');
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const nameA = state.resultA.author_name || 'A';
+        const nameB = state.resultB.author_name || 'B';
+        a.download = `语言指纹对比_${nameA}_vs_${nameB}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('PDF 报告导出成功！');
+    } catch (e) {
+        showToast(e.message, 'error');
+    }
+});
 
+// ---------- Export TXT ----------
+$('#btnExportTXT').addEventListener('click', async () => {
+    if (!state.resultA || !state.resultB) {
+        showToast('请先完成文本分析', 'warning');
+        return;
+    }
     try {
         const res = await fetch('/api/export/report', {
             method: 'POST',
@@ -339,9 +377,10 @@ $('#btnExport').addEventListener('click', async () => {
                 appreciation_text: state.appreciationText,
             }),
         });
-
-        if (!res.ok) throw new Error('导出失败');
-
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || '导出失败');
+        }
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -351,7 +390,7 @@ $('#btnExport').addEventListener('click', async () => {
         a.download = `语言指纹对比_${nameA}_vs_${nameB}.txt`;
         a.click();
         URL.revokeObjectURL(url);
-        showToast('报告导出成功！');
+        showToast('TXT 报告导出成功！');
     } catch (e) {
         showToast(e.message, 'error');
     }
@@ -416,7 +455,8 @@ async function restoreHistory(id) {
         // Populate UI
         $('#authorNameA').value = entry.author_a;
         $('#authorNameB').value = entry.author_b;
-        $('#btnExport').disabled = false;
+        $('#btnExportPDF').disabled = false;
+        $('#btnExportTXT').disabled = false;
         $('#btnAppreciation').disabled = false;
 
         if (entry.result_a) {
@@ -497,7 +537,8 @@ $('#btnNewStudy').addEventListener('click', async () => {
     $('#comparisonSection').style.display = 'none';
     $('#appreciationSection').style.display = 'none';
     $('#progressBar').style.display = 'none';
-    $('#btnExport').disabled = true;
+    $('#btnExportPDF').disabled = true;
+    $('#btnExportTXT').disabled = true;
     $('#btnAppreciation').disabled = true;
 
     $('#resultTextA').textContent = '';
