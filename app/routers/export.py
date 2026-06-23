@@ -79,13 +79,13 @@ async def export_txt(req: ExportRequest):
         report = _format_txt(req.result_a, req.result_b, req.comparison, req.appreciation_text)
         safe_name = f"{req.result_a.get('author_name', 'A')}_vs_{req.result_b.get('author_name', 'B')}"
         safe_name = "".join(c for c in safe_name if c.isalnum() or c in '._- ')
+        from urllib.parse import quote
         filename = f"语言指纹对比_{safe_name}.txt"
-
-        encoded_filename = filename.encode("utf-8").decode("latin-1", errors="replace")
+        encoded = quote(filename, safe='')
         return Response(
             content=report.encode("utf-8"),
             media_type="text/plain; charset=utf-8",
-            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded}"},
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"报告生成失败: {e}")
@@ -187,7 +187,7 @@ def _build_pdf(result_a: dict, result_b: dict, comparison: dict, appreciation: s
     pdf.set_font(font_name, "", 8)
     pdf.cell(0, 6, "本报告由「作家语言指纹对比分析系统」自动生成", align="C")
 
-    return pdf.output()
+    return bytes(pdf.output())
 
 
 def _pdf_author_section(pdf: FPDF, font_name: str, title: str, r: dict):
@@ -236,11 +236,13 @@ async def export_pdf(req: ExportRequest):
         pdf_bytes = _build_pdf(req.result_a, req.result_b, req.comparison, req.appreciation_text)
         safe_name = f"{req.result_a.get('author_name', 'A')}_vs_{req.result_b.get('author_name', 'B')}"
         safe_name = "".join(c for c in safe_name if c.isalnum() or c in '._- ')
+        from urllib.parse import quote
         filename = f"语言指纹对比_{safe_name}.pdf"
+        encoded = quote(filename, safe='')
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"},
+            headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded}"},
         )
     except ImportError:
         raise HTTPException(status_code=500, detail="缺少 fpdf2 库，无法生成 PDF")

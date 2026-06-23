@@ -218,15 +218,6 @@ $('#wcModal').addEventListener('click', (e) => {
     if (e.target === $('#wcModal')) $('#wcModal').style.display = 'none';
 });
 
-// Download word cloud
-$('#btnDownloadWc').addEventListener('click', () => {
-    const which = state.wcModalTarget;
-    const sid = state[`sessionId${which}`];
-    if (!sid) return;
-    const dlUrl = `/api/export/wordcloud/${sid}/${which.toLowerCase()}?format=png`;
-    window.open(dlUrl, '_blank');
-});
-
 // ---------- Render Comparison ----------
 function renderComparison(comp) {
     const jaccard = comp.jaccard_similarity || 0;

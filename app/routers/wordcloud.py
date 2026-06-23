@@ -59,35 +59,3 @@ async def serve_wordcloud(
     return Response(content=img_bytes, media_type="image/png")
 
 
-@router.get("/export/wordcloud/{session_id}/{author}")
-async def export_wordcloud(
-    session_id: str,
-    author: str,
-    format: str = Query("png", alias="format"),
-):
-    """Download the full-size (600x400) word cloud image."""
-    if ".." in session_id or "/" in session_id or "\\" in session_id:
-        raise HTTPException(status_code=400, detail="无效的 session_id")
-
-    word_freq, author_name = _load_word_freq(session_id)
-
-    image = generate_wordcloud(word_freq, author_name, width=600, height=400)
-    if image is None:
-        raise HTTPException(status_code=500, detail="词云生成失败")
-
-    fmt = format.upper()
-    if fmt in ("JPG", "JPEG"):
-        img_bytes = wordcloud_to_bytes(image, "JPEG")
-        media_type = "image/jpeg"
-        ext = "jpg"
-    else:
-        img_bytes = wordcloud_to_bytes(image, "PNG")
-        media_type = "image/png"
-        ext = "png"
-
-    filename = f"{author_name}_词云图.{ext}"
-    return Response(
-        content=img_bytes,
-        media_type=media_type,
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
