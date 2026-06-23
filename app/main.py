@@ -3,9 +3,9 @@ from __future__ import annotations
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from fastapi.responses import FileResponse
 
 from app.database import init_db
 from app.routers import upload, analyze, appreciation, wordcloud, export, history
@@ -35,10 +35,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Templates
-templates = Jinja2Templates(directory=TEMPLATES_DIR)
-
-# Routers
+# Routers — register BEFORE static mount
 app.include_router(upload.router)
 app.include_router(analyze.router)
 app.include_router(appreciation.router)
@@ -46,11 +43,11 @@ app.include_router(wordcloud.router)
 app.include_router(export.router)
 app.include_router(history.router)
 
-# Static files — mount AFTER routers to avoid intercepting API routes
+# Static files
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.get("/")
-async def index(request: Request):
-    """Serve the main page."""
-    return templates.TemplateResponse("index.html", {"request": request})
+async def index():
+    """Serve the main page as static HTML (avoids Jinja2 caching bug on Python 3.14)."""
+    return FileResponse(os.path.join(TEMPLATES_DIR, "index.html"))
