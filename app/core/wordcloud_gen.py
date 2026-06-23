@@ -9,8 +9,8 @@ matplotlib.use('Agg')
 from wordcloud import WordCloud
 from PIL import Image
 
-# Font path relative to project root
-_FONTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static", "fonts")
+# Font path: wordcloud_gen.py is in app/core/, so two dirname levels to reach app/
+_FONTS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "fonts")
 WC_FONT_PATH = os.path.join(_FONTS_DIR, "NotoSansSC-Regular.ttf")
 
 # Fallback: try system font paths
