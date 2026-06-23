@@ -10,21 +10,20 @@ from fastapi.templating import Jinja2Templates
 from app.database import init_db
 from app.routers import upload, analyze, appreciation, wordcloud, export, history
 
+# Resolve absolute paths from this file's location
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(APP_DIR, "static")
+TEMPLATES_DIR = os.path.join(APP_DIR, "templates")
+UPLOADS_DIR = os.path.join(APP_DIR, "uploads")
+WORDCLOUDS_DIR = os.path.join(APP_DIR, "wordclouds")
+DATA_DIR = os.path.join(APP_DIR, "data")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup/shutdown events."""
-    # Ensure data directories exist
-    base = os.path.dirname(__file__)
-    for subdir in ["uploads", "wordclouds"]:
-        path = os.path.join(base, subdir)
-        os.makedirs(path, exist_ok=True)
-
-    # Create data dir for SQLite
-    data_dir = os.path.join(os.path.dirname(base), "app", "data")
-    os.makedirs(data_dir, exist_ok=True)
-
-    # Init database tables
+    for d in [UPLOADS_DIR, WORDCLOUDS_DIR, DATA_DIR]:
+        os.makedirs(d, exist_ok=True)
     init_db()
     yield
 
@@ -36,12 +35,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Static files
-static_dir = os.path.join(os.path.dirname(__file__), "static")
-app.mount("/static", StaticFiles(directory=static_dir), name="static")
-
 # Templates
-templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), "templates"))
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 # Routers
 app.include_router(upload.router)
@@ -50,6 +45,9 @@ app.include_router(appreciation.router)
 app.include_router(wordcloud.router)
 app.include_router(export.router)
 app.include_router(history.router)
+
+# Static files — mount AFTER routers to avoid intercepting API routes
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.get("/")
