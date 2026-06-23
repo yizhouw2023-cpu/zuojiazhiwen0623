@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作家语言指纹对比分析系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- ====== 顶部导航栏 ====== -->
+    <header class="header">
+        <div class="header-inner">
+            <h1 class="header-title">📖 作家语言指纹对比分析系统</h1>
+            <div class="header-actions">
+                <button class="btn-header" id="btnIntro" title="功能说明">❓ 功能说明</button>
+                <button class="btn-header" id="btnSettings" title="API 设置">⚙️ 设置</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- ====== 文本提交区 ====== -->
+        <section class="card" id="inputSection">
+            <h2 class="card-title">📂 文本提交</h2>
+            <div class="author-row">
+                <div class="author-card" id="authorCardA">
+                    <div class="author-header">
+                        <span class="author-icon">📝</span>
+                        <span class="author-label">作家 A</span>
+                    </div>
+                    <div class="author-inputs">
+                        <input type="text" class="input-name" id="authorNameA" placeholder="输入作家姓名...">
+                        <div class="file-area" id="fileAreaA">
+                            <input type="file" class="file-input-hidden" id="fileInputA" accept=".txt,.docx">
+                            <button class="btn-file" id="btnFileA">📎 选择文件</button>
+                            <span class="file-name" id="fileNameA">未选择文件</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="author-card" id="authorCardB">
+                    <div class="author-header">
+                        <span class="author-icon">📝</span>
+                        <span class="author-label">作家 B</span>
+                    </div>
+                    <div class="author-inputs">
+                        <input type="text" class="input-name" id="authorNameB" placeholder="输入作家姓名...">
+                        <div class="file-area" id="fileAreaB">
+                            <input type="file" class="file-input-hidden" id="fileInputB" accept=".txt,.docx">
+                            <button class="btn-file" id="btnFileB">📎 选择文件</button>
+                            <span class="file-name" id="fileNameB">未选择文件</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" id="btnAnalyze">🚀 开始分析</button>
+                <button class="btn btn-success" id="btnExport" disabled>💾 导出报告</button>
+                <button class="btn btn-accent" id="btnAppreciation" disabled>✨ 文章赏析</button>
+            </div>
+        </section>
+
+        <!-- ====== 屏蔽词区 ====== -->
+        <section class="card" id="stopwordSection">
+            <h2 class="card-title">🔍 自定义屏蔽词</h2>
+            <p class="card-hint">系统已内置 150+ 中文停用词（的/了/是/我…）。如需额外屏蔽，请用逗号或空格分隔输入：</p>
+            <input type="text" class="input-text" id="stopwordsInput" placeholder="例如：一个, 一种, 看着">
+            <label class="checkbox-label">
+                <input type="checkbox" id="useDefaultStopwords" checked>
+                <span>使用内置停用词表</span>
+            </label>
+        </section>
+
+        <!-- ====== 分析进度 ====== -->
+        <div class="progress-bar" id="progressBar" style="display:none;">
+            <div class="spinner"></div>
+            <span>⏳ 正在分析中，请稍候...</span>
+        </div>
+
+        <!-- ====== 分析结果区 ====== -->
+        <section class="card" id="resultSection" style="display:none;">
+            <h2 class="card-title">📊 分析结果 <span class="hint-click">（点击词云缩略图查看大图）</span></h2>
+            <div class="result-panels">
+                <!-- 作家 A -->
+                <div class="result-panel" id="panelA">
+                    <h3 class="panel-title">作家 A 分析结果</h3>
+                    <div class="result-text" id="resultTextA"></div>
+                    <div class="wordcloud-box" id="wcBoxA">
+                        <img class="wordcloud-thumb" id="wcThumbA" src="" alt="词云A" style="display:none;">
+                        <span class="wc-placeholder" id="wcPlaceholderA">词云图将在分析完成后显示<br>点击查看大图</span>
+                    </div>
+                </div>
+                <!-- 作家 B -->
+                <div class="result-panel" id="panelB">
+                    <h3 class="panel-title">作家 B 分析结果</h3>
+                    <div class="result-text" id="resultTextB"></div>
+                    <div class="wordcloud-box" id="wcBoxB">
+                        <img class="wordcloud-thumb" id="wcThumbB" src="" alt="词云B" style="display:none;">
+                        <span class="wc-placeholder" id="wcPlaceholderB">词云图将在分析完成后显示<br>点击查看大图</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====== 对比摘要 ====== -->
+        <section class="card" id="comparisonSection" style="display:none;">
+            <h2 class="card-title accent">🔬 对比摘要</h2>
+            <div class="comparison-grid" id="comparisonGrid">
+                <div class="comp-item"><span class="comp-label">Jaccard 词汇相似度</span><span class="comp-value" id="compJaccard">—</span></div>
+                <div class="comp-item"><span class="comp-label">共享高频词</span><span class="comp-value" id="compShared">—</span></div>
+                <div class="comp-item"><span class="comp-label">作家 A 独有词汇数</span><span class="comp-value" id="compUniqA">—</span></div>
+                <div class="comp-item"><span class="comp-label">作家 B 独有词汇数</span><span class="comp-value" id="compUniqB">—</span></div>
+                <div class="comp-item"><span class="comp-label">共用词汇总数</span><span class="comp-value" id="compSharedVocab">—</span></div>
+                <div class="comp-item"><span class="comp-label">词汇并集大小</span><span class="comp-value" id="compUnion">—</span></div>
+                <div class="comp-item"><span class="comp-label">平均句长比 (A/B)</span><span class="comp-value" id="compSentRatio">—</span></div>
+            </div>
+        </section>
+
+        <!-- ====== 文章赏析 ====== -->
+        <section class="card appreciation-card" id="appreciationSection" style="display:none;">
+            <div class="appreciation-header">
+                <h2 class="card-title">✨ 文章赏析</h2>
+                <button class="btn btn-sm btn-success" id="btnExportAppreciation">💾 导出赏析文本</button>
+            </div>
+            <div class="appreciation-content" id="appreciationContent">
+                <div class="appreciation-loading" id="appreciationLoading" style="display:none;">
+                    <div class="spinner"></div>
+                    <span>🤖 正在生成文章赏析，AI 正在仔细品读您的文本...</span>
+                </div>
+                <div class="appreciation-text markdown-body" id="appreciationText"></div>
+            </div>
+        </section>
+
+        <!-- ====== 历史记录 ====== -->
+        <section class="card" id="historySection">
+            <h2 class="card-title">📜 历史记录 <span class="hint-click">（点击可查看）</span></h2>
+            <div class="history-list-wrapper">
+                <ul class="history-list" id="historyList">
+                    <li class="history-empty">暂无历史记录</li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" id="btnNewStudy">🆕 进行新的研究</button>
+                <button class="btn btn-danger-outline" id="btnClearHistory">🗑️ 清除历史</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- ====== 模态框：词云大图 ====== -->
+    <div class="modal-overlay" id="wcModal" style="display:none;">
+        <div class="modal-content modal-wc">
+            <div class="modal-header">
+                <h3 id="wcModalTitle">📊 词云图</h3>
+                <button class="modal-close" id="wcModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <img id="wcModalImage" src="" alt="词云大图">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success" id="btnDownloadWc">💾 导出原图 (PNG)</button>
+                <button class="btn btn-secondary" id="btnWcClose">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== 模态框：功能说明 ====== -->
+    <div class="modal-overlay" id="introModal" style="display:none;">
+        <div class="modal-content modal-intro">
+            <div class="modal-header">
+                <h3>✨ 功能介绍 — 作家语言指纹对比分析系统</h3>
+                <button class="modal-close" id="introModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="intro-section">
+                    <h4>🎯 程序功能</h4>
+                    <p>本系统用于对比分析两位作家的文本，通过自然语言处理（NLP）技术提取「语言指纹」——即每位作家独特的用词习惯、句式特征等。</p>
+                    <p>主要分析维度：总词数与总句数统计、平均句长、前10高频实词排行、独有内容词汇数量、Jaccard 词汇相似度、共享高频词 & 句长对比、词云可视化。</p>
+                </div>
+                <div class="intro-section">
+                    <h4>📝 使用步骤</h4>
+                    <ol>
+                        <li>输入两位作家的姓名</li>
+                        <li>点击「选择文件」为每位作家选择文本（支持 .txt / .docx）</li>
+                        <li>（可选）在屏蔽词框中输入需要忽略的词语</li>
+                        <li>点击「🚀 开始分析」按钮</li>
+                        <li>查看分析结果和词云缩略图</li>
+                        <li>点击词云缩略图弹出高清大图</li>
+                        <li>查看下方「对比摘要」获取对比数据</li>
+                        <li>点击「✨ 文章赏析」让 AI 生成文学评论</li>
+                        <li>点击「💾 导出报告」保存分析结果</li>
+                    </ol>
+                </div>
+                <div class="intro-section">
+                    <h4>📊 对比指标说明</h4>
+                    <p><strong>Jaccard 相似度：</strong>两位作家共有内容词数 ÷ 总内容词数。值越接近 1，词汇重叠度越高。</p>
+                    <p><strong>句长比（A/B）：</strong>作家A平均句长 ÷ 作家B平均句长。>1 表示A的句子更长。</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="hideIntroNext">
+                    <span>下次不再显示</span>
+                </label>
+                <button class="btn btn-primary" id="btnIntroClose">✅ 开始使用</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== 模态框：API 设置 ====== -->
+    <div class="modal-overlay" id="settingsModal" style="display:none;">
+        <div class="modal-content modal-settings">
+            <div class="modal-header">
+                <h3>⚙️ API 设置</h3>
+                <button class="modal-close" id="settingsModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-item">
+                    <label for="apiKeyInput">DeepSeek API Key</label>
+                    <input type="password" class="input-text" id="apiKeyInput" placeholder="sk-xxxxxxxxxxxxxxxx">
+                    <p class="card-hint">用于「文章赏析」功能。不填则使用服务器默认配置。Key 仅保存在您的浏览器中。</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="btnSaveSettings">💾 保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====== Toast 提示 ====== -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
